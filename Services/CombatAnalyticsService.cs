@@ -97,7 +97,8 @@ public class CombatAnalyticsService
                 SUM(CASE WHEN combat_events.amount_type = {AmountType.DAMAGE} THEN combat_events.amount ELSE 0 END) as total_damage,
                 SUM(CASE WHEN combat_events.amount_type = {AmountType.HEAL} THEN combat_events.amount ELSE 0 END) as total_healing,
                 SUM(CASE WHEN combat_events.amount_type = {AmountType.ABSORB} THEN combat_events.amount ELSE 0 END) as total_absorb,
-                COALESCE(d.deaths, 0) AS deaths
+                COALESCE(d.deaths, 0) AS deaths,
+                COALESCE(taken.damage_taken, 0) AS total_damage_taken
             FROM encounters
             INNER JOIN character_encounters ON character_encounters.encounter_id = encounters.id
             INNER JOIN characters ON characters.id = character_encounters.character_id
@@ -109,10 +110,18 @@ public class CombatAnalyticsService
                     to_character_id,
                     COUNT(*) AS deaths
                 FROM combat_events
-                WHERE encounter_id = 141
+                WHERE encounter_id = {encounterId}
                 AND event_type = 600
                 GROUP BY to_character_id
             ) d ON d.to_character_id = characters.id
+			 LEFT JOIN (
+			    SELECT 
+			        to_character_id,
+					SUM(CASE WHEN combat_events.amount_incoming_type = {AmountType.DAMAGE} THEN combat_events.amount_incoming ELSE 0 END)  AS damage_taken
+			    FROM combat_events
+			    WHERE encounter_id = {encounterId}
+			    GROUP BY to_character_id
+			) taken ON taken.to_character_id = characters.id
             LEFT JOIN specs ON specs.id = character_encounters.spec_id
             WHERE encounters.id = {encounterId}
             AND combat_events.amount_type IS NOT NULL
@@ -121,7 +130,8 @@ public class CombatAnalyticsService
                 characters.name,
                 specs.name,
                 specs.class,
-                d.deaths
+                d.deaths,
+                taken.damage_taken
             ORDER BY
                 characters.id
         ").ToListAsync();
@@ -161,6 +171,8 @@ public class EncounterCharacterStatsDto
     public double TotalAbsorb { get; set; }
     public double TotalHealing { get; set; }
     public int Deaths { get; set; }
+    public double TotalDamageTaken { get; set; }
+
 }
 
 public class GetEncounterStatsPerIntervalDto

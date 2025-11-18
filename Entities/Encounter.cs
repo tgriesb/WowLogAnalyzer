@@ -15,7 +15,6 @@ public class Encounter
     [ForeignKey(nameof(StartCombatEventId))]
     public CombatEvent StartCombatEvent { get; set; } = null!;
 
-
     public int? EndCombatEventId { get; set; }
     [ForeignKey(nameof(EndCombatEventId))]
     public CombatEvent EndCombatEvent { get; set; } = null!;

@@ -13,7 +13,6 @@ using WowLogAnalyzer.Utilities;
 using WowLogAnalyzer.WowEvents;
 using WowLogAnalyzer.Registry;
 using WowLogAnalyzer.Parsers;
-using WowLogAnalyzer.Extensions;
 
 namespace WowLogAnalyzer.Services;
 public class CombatLogService(AppDbContext dbContext, IUserRepository userRepository)
@@ -88,21 +87,21 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
                 }
                 if (evt.ToGuid.StartsWith("Player-"))
                 {
-                    if (eventData is IHealCombatEvent healCombatEvent)
+                    if (eventData is IHealCombatEvent incomingHealCombatEvent)
                     {
-                        evt.AmountIncoming = healCombatEvent.Amount;
+                        evt.AmountIncoming = incomingHealCombatEvent.Amount;
                         evt.AmountIncomingType = AmountType.HEAL;
                     }
 
-                    if (eventData is IDamageCombatEvent damageCombatEvent)
+                    if (eventData is IDamageCombatEvent incomingDamageCombatEvent)
                     {
-                        evt.AmountIncoming = damageCombatEvent.Amount;
+                        evt.AmountIncoming = incomingDamageCombatEvent.Amount;
                         evt.AmountIncomingType = AmountType.DAMAGE;
                     }
 
-                    if (eventData is IAbsorbCombatEvent absorbCombatEvent)
+                    if (eventData is IAbsorbCombatEvent incomingAbsorbCombatEvent)
                     {
-                        evt.AmountIncoming = absorbCombatEvent.Amount;
+                        evt.AmountIncoming = incomingAbsorbCombatEvent.Amount;
                         evt.AmountIncomingType = AmountType.ABSORB;
                     }
                 }
@@ -118,7 +117,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
             writer.Write(evt.ToGuid, NpgsqlTypes.NpgsqlDbType.Text);
             writer.Write(evt.Amount, NpgsqlTypes.NpgsqlDbType.Double);
             writer.Write((int?)evt.AmountType, NpgsqlTypes.NpgsqlDbType.Integer);            
-            writer.Write(evt.Amount, NpgsqlTypes.NpgsqlDbType.Double);
+            writer.Write(evt.AmountIncoming, NpgsqlTypes.NpgsqlDbType.Double);
             writer.Write((int?)evt.AmountIncomingType, NpgsqlTypes.NpgsqlDbType.Integer);
         }
         await writer.CompleteAsync();
