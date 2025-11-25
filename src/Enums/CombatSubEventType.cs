@@ -55,6 +55,7 @@ public enum CombatSubEventType
     SPELL_BUILDING_DAMAGE = 331,
     SPELL_BUILDING_HEAL = 332,
     SPELL_EXTRA_ATTACKS = 333,
+    SPELL_AURA_BROKEN = 334,
 
     // --- Environmental ---
     ENVIRONMENTAL_DAMAGE = 400,
