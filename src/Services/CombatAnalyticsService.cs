@@ -12,14 +12,9 @@ using WowLogAnalyzer.WowEvents;
 
 namespace WowLogAnalyzer.Services;
 
-public class CombatAnalyticsService
+public class CombatAnalyticsService(AppDbContext dbContext) : ICombatAnalyticsService
 {
-    private readonly AppDbContext _dbContext;
-
-    public CombatAnalyticsService(AppDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
+    private readonly AppDbContext _dbContext = dbContext;
 
     public async Task<List<EncounterListDto>> GetEncountersAsync(int logId)
     {

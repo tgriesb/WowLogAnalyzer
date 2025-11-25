@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using System.Text;
@@ -52,9 +53,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<CombatLogService, CombatLogService>();
-builder.Services.AddScoped<CombatAnalyticsService, CombatAnalyticsService>();
-
+builder.Services.AddScoped<ICombatLogService, CombatLogService>();
+builder.Services.AddScoped<ICombatAnalyticsService, CombatAnalyticsService>();
+builder.Services.AddScoped<IJwtSecurityService, JwtSecurityService>();
 
 var app = builder.Build();
 
@@ -66,3 +67,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+
+internal class JwtTokenService
+{
+}

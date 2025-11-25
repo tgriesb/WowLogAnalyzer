@@ -1,12 +1,9 @@
-using System.Runtime.InteropServices;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.ObjectPool;
 using WowLogAnalyzer.Data;
 using WowLogAnalyzer.Entities;
-using WowLogAnalyzer.Enums;
 using WowLogAnalyzer.Repository;
 using WowLogAnalyzer.Services;
 
@@ -19,16 +16,16 @@ public class LogController(
     AppDbContext dbContext,
     IUserRepository userRepository,
     IConfiguration config,
-    CombatLogService combatLogService,
-    CombatAnalyticsService combatAnalyticsService
+    ICombatLogService combatLogService,
+    ICombatAnalyticsService combatAnalyticsService
     ) : ControllerBase
 {
     private readonly AppDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
     private readonly IConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
 
-    private readonly CombatLogService _combatLogService = combatLogService ?? throw new ArgumentNullException(nameof(combatLogService));
-    private readonly CombatAnalyticsService _combatAnalyticsService = combatAnalyticsService ?? throw new ArgumentNullException(nameof(combatAnalyticsService));
+    private readonly ICombatLogService _combatLogService = combatLogService ?? throw new ArgumentNullException(nameof(combatLogService));
+    private readonly ICombatAnalyticsService _combatAnalyticsService = combatAnalyticsService ?? throw new ArgumentNullException(nameof(combatAnalyticsService));
 
     [HttpGet()]
     public async Task<IActionResult> Logs([FromQuery] int page = 0, [FromQuery] int pageSize = 0)

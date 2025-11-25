@@ -15,7 +15,7 @@ using WowLogAnalyzer.Registry;
 using WowLogAnalyzer.Parsers;
 
 namespace WowLogAnalyzer.Services;
-public class CombatLogService(AppDbContext dbContext, IUserRepository userRepository)
+public class CombatLogService(AppDbContext dbContext, IUserRepository userRepository) : ICombatLogService
 {
     private readonly AppDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -281,7 +281,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         await setCharacterToId.ExecuteNonQueryAsync();
     }
 
-    public CombatEvent ParseLine(string line)
+    private static CombatEvent ParseLine(string line)
     {
         // Parse timestamp index, just find the 2 spaces
         int timestampSplitIndex = line.IndexOf("  ");
