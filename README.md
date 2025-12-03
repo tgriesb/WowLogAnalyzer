@@ -22,18 +22,24 @@ RESTful API for analyzing World of Warcraft combat logs. Upload and parse WoW co
    cd WowLogAnalyzer/backend/src
    ```
 
-2. **Configure the database**
+2. **Configure environment variables**
+   Create a `.env` file in `backend/src/`:
+   ```env
+   Database__DefaultConnection=Host=localhost;Port=5432;Database=wow_log_analyzer;Username=postgres;Password=yourpassword;Include Error Detail=true;Persist Security Info=true
+   Jwt__Key=your-super-secret-jwt-key-at-least-32-characters-long-base64-encoded
+   ASPNETCORE_ENVIRONMENT=Development
+   ```
+
+   **Generate a secure JWT key:**
+   ```bash
+   # Using PowerShell
+   [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
    
-   Update `appsettings.json` with your PostgreSQL connection string:
-   ```json
-   {
-     "Database": {
-       "DefaultConnection": "Host=localhost;Database=wowloganalyzer;Username=postgres;Password=yourpassword"
-     },
-     "Jwt": {
-       "Key": "your-super-secret-jwt-key-at-least-32-characters-long"
-     }
-   }
+   # Using OpenSSL (Linux/Mac)
+   openssl rand -base64 32
+   
+   # Using Node.js
+   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
    ```
 
 3. **Install dependencies**
