@@ -72,7 +72,7 @@ public class LogController(
         {
             Name = logName ?? "",
             FileName = file.FileName,
-            UploadDate = DateTime.Now.ToUniversalTime(),
+            UploadedAt = DateTime.Now.ToUniversalTime(),
             UserId = int.Parse(loggedInUserId)
         };
 

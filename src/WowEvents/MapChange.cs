@@ -7,7 +7,7 @@ public class MapChange : ICombatEvent
 {
     public CombatSubEventType EventType => CombatSubEventType.MAP_CHANGE;
 
-    [LogField(1)] public int MapId { get; set; }     // 456
+    [LogField(1)] public long MapId { get; set; }     // 456
     [LogField(2)] public string MapName { get; set; } = "";     // "Terrace of Endless Spring"
     [LogField(3)] public double X0 { get; set; }     // -789.583984
     [LogField(4)] public double X1 { get; set; }     // -1258.333984

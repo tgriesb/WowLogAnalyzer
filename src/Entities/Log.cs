@@ -11,7 +11,7 @@ public class Log
     public string Name { get; set; } = "";
 
     [Required]
-    public DateTime UploadDate { get; set; } = DateTime.UtcNow;
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
     public string FileName { get; set; } = string.Empty;
 

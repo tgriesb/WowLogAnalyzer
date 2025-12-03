@@ -9,25 +9,25 @@ public class SpellAbsorbed : ICombatEvent, ISourceDestCombatEvent, IAbsorbCombat
 
     [LogField(1)] public string SourceGUID { get; set; } = "";      // Player-4385-05E60F02              // Vehicle-0-4389-996-4799-60583-00001687E9
     [LogField(2)] public string SourceName { get; set; } = "";      // "Holygran-Immerseus-US"           // "Protector Kaolan"
-    [LogField(3)] public int SourceFlags { get; set; }              // 0x40512                           // 0xa48
-    [LogField(4)] public int SourceRaidFlags { get; set; }          // 0x80000000                        // 0x80000020
+    [LogField(3)] public long SourceFlags { get; set; }              // 0x40512                           // 0xa48
+    [LogField(4)] public long SourceRaidFlags { get; set; }          // 0x80000000                        // 0x80000020
     [LogField(5)] public string DestGUID { get; set; } = "";        // Player-4385-05E60F02              // Player-4385-05E60F02
     [LogField(6)] public string DestName { get; set; } = "";        // "Holygran-Immerseus-US"           // "Holygran-Immerseus-US"
-    [LogField(7)] public int DestFlags { get; set; }                // 0x40512                           // 0x40512
-    [LogField(8)] public int DestRaidFlags { get; set; }            // 0x80000000                        // 0x80000000
+    [LogField(7)] public long DestFlags { get; set; }                // 0x40512                           // 0x40512
+    [LogField(8)] public long DestRaidFlags { get; set; }            // 0x80000000                        // 0x80000000
 
 
 
-    [LogField(9)] public int SpellId { get; set; }                 // 124255                            // Player-4385-05E60F02
+    [LogField(9)] public long SpellId { get; set; }                 // 124255                            // Player-4385-05E60F02
     [LogField(10)] public string SpellName { get; set; } = "";      // "Stagger"                         // "Holygran-Immerseus-US"
-    [LogField(11)] public int SpellSchool { get; set; }             // 0x1                               // 0x40512
+    [LogField(11)] public long SpellSchool { get; set; }             // 0x1                               // 0x40512
     [LogField(12)] public string UnitGUID { get; set; } = "";        // Player-4385-05E54138              // 0x80000000
     [LogField(13)] public string UnitName { get; set; } = "";       // "Nepriesto-Immerseus-US"          // 115069
-    [LogField(14)] public int UnitFlags { get; set; }               // 0x514                             // "Stance of the Sturdy Ox"
-    [LogField(15)] public int UnitRaidFlags { get; set; }           // 0x80000000                        // 0x1
-    [LogField(16)] public int AbsorbSpellId { get; set; }            // 47753                            
+    [LogField(14)] public long UnitFlags { get; set; }               // 0x514                             // "Stance of the Sturdy Ox"
+    [LogField(15)] public long UnitRaidFlags { get; set; }           // 0x80000000                        // 0x1
+    [LogField(16)] public long AbsorbSpellId { get; set; }            // 47753                            
     [LogField(17)] public string AbsorbSpellName { get; set; } = ""; // "Divine Aegis"                   
-    [LogField(18)] public int AbsorbSpellSchool { get; set; }        // 0x2
+    [LogField(18)] public long AbsorbSpellSchool { get; set; }        // 0x2
     [LogField(19)] public double Amount { get; set; }                // 2059                               // 72228
     [LogField(20)] public double AmountBeforeAbsorb { get; set; }    // 18578                              // 373909
 

@@ -23,14 +23,17 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
     public async Task ParseLogFileAsync(IFormFile file, Log log)
     {
         using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
-        string? line;
+        await ParseLogLinesAsync(reader, log);
+    }
 
+    public async Task ParseLogLinesAsync(TextReader reader, Log log)
+    {
         // Using EF took 22+ minutes, switching to COPY
         string connectionString = _dbContext.Database.GetDbConnection().ConnectionString;
-
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync();
         
+        string? line;
         using var writer = await conn.BeginBinaryImportAsync(@"
             COPY combat_events (
                 log_id, 
@@ -47,7 +50,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
             FROM STDIN (FORMAT BINARY)");
 
         string currentZoneName = "";
-        int currentInstanceId = -1;
+        long currentInstanceId = -1;
 
         while ((line = await reader.ReadLineAsync()) != null)
         {
@@ -200,7 +203,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
             SELECT
                 NOW(),
                 SPLIT_PART((combat_events.event_data->>'SourceName'), '-', 1),
-                (combat_events.event_data->>'SourceGUID'),
+                combat_events.from_guid,
                 SUBSTRING(
                     (combat_events.event_data->>'SourceName'),
                     POSITION('-' IN (combat_events.event_data->>'SourceName')) + 1  
@@ -210,12 +213,12 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
                 NOT EXISTS (
                     SELECT characters.guid 
                     FROM characters
-                    WHERE characters.guid = (combat_events.event_data->>'SourceGUID')
+                    WHERE characters.guid = combat_events.from_guid
                 ) AND
                 combat_events.event_type =  {(int)CombatSubEventType.SPELL_AURA_APPLIED} AND 
-                (combat_events.event_data->>'SourceGUID') ILIKE 'Player%' AND
+                combat_events.from_guid ILIKE 'Player%' AND
                 combat_events.log_id = @logId
-            GROUP BY (combat_events.event_data->>'SourceName'), (combat_events.event_data->>'SourceGUID')
+            GROUP BY (combat_events.event_data->>'SourceName'), combat_events.from_guid
           
         ", conn);
         addCharacters.CommandTimeout = 500;
@@ -281,7 +284,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         await setCharacterToId.ExecuteNonQueryAsync();
     }
 
-    private static CombatEvent ParseLine(string line)
+    public static CombatEvent ParseLine(string line)
     {
         // Parse timestamp index, just find the 2 spaces
         int timestampSplitIndex = line.IndexOf("  ");
@@ -297,7 +300,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         Regex regex = new Regex(pattern);
         MatchCollection matches = regex.Matches(line[timestampSplitIndex..]);
 
-        List<string> fields = [];
+        List<string> fields = new(capacity: 50);
         foreach (Match match in matches)
         {
             string matchString = match.ToString().Trim();
@@ -325,7 +328,7 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         return evt;
     }
 
-    private static ICombatEvent ParsePayload(CombatSubEventType type, string[] f)
+    public static ICombatEvent ParsePayload(CombatSubEventType type, string[] f)
     {
         var payloadType = PayloadTypeRegistry.GetPayloadType(type)
             ?? throw new Exception($"No payload type found for event type {f[0]} ");

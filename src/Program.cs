@@ -8,6 +8,8 @@ using WowLogAnalyzer.Converters;
 using WowLogAnalyzer.Data;
 using WowLogAnalyzer.Repository;
 using WowLogAnalyzer.Services;
+using WowLogAnalyzer.Extensions;
+using Microsoft.OpenApi;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -57,7 +59,24 @@ builder.Services.AddScoped<ICombatLogService, CombatLogService>();
 builder.Services.AddScoped<ICombatAnalyticsService, CombatAnalyticsService>();
 builder.Services.AddScoped<IJwtSecurityService, JwtSecurityService>();
 
+// Use the 2.0 OpenAPI specification for swagger gen
+builder.Services.AddOpenApi(options => {  
+    options.OpenApiVersion = OpenApiSpecVersion.OpenApi2_0;  
+});
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
+
+// Only show swagger in development
+if (app.Environment.IsDevelopment()) 
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseGlobalExceptionHandler();
 
 app.UseRouting();
 
@@ -67,7 +86,3 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
-
-internal class JwtTokenService
-{
-}

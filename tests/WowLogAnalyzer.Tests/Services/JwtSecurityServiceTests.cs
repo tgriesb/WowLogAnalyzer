@@ -90,7 +90,7 @@ public class JwtSecurityServiceTests
     {
         var config = new Mock<IConfiguration>();
         config.Setup(c => c["Jwt:Secret"]).Returns("test-secret-key-minimum-32-chars-long!");
-        config.Setup(c => c["Jwt:ExpiryMinutes"]).Returns((string)null);
+        config.Setup(c => c["Jwt:ExpiryMinutes"]).Returns((string?)null);
 
         var svc = new JwtSecurityService(config.Object);
 

@@ -6,10 +6,10 @@ public interface ISourceDestCombatEvent
 {
     public string SourceGUID { get; set; }
     public string SourceName { get; set; }
-    public int SourceFlags { get; set; }
-    public int SourceRaidFlags { get; set; }
+    public long SourceFlags { get; set; }
+    public long SourceRaidFlags { get; set; }
     public string DestGUID { get; set; }
     public string DestName { get; set; }
-    public int DestFlags { get; set; }
-    public int DestRaidFlags { get; set; }
+    public long DestFlags { get; set; }
+    public long DestRaidFlags { get; set; }
 }

@@ -282,9 +282,9 @@ namespace WowLogAnalyzer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<DateTime>("UploadDate")
+                    b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("upload_date");
+                        .HasColumnName("uploaded_at");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("integer")
