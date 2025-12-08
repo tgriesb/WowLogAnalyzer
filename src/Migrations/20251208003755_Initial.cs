@@ -133,6 +133,65 @@ namespace WowLogAnalyzer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "user_sessions",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    user_id = table.Column<int>(type: "integer", nullable: false),
+                    device_name = table.Column<string>(type: "text", nullable: false),
+                    user_agent = table.Column<string>(type: "text", nullable: false),
+                    ip_address = table.Column<string>(type: "text", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    last_seen_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    revoked_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    revoked_reason = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_user_sessions", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_user_sessions_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "refresh_tokens",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    user_session_id = table.Column<int>(type: "integer", nullable: false),
+                    token_hash = table.Column<string>(type: "text", nullable: false),
+                    expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_ip = table.Column<string>(type: "text", nullable: false),
+                    revoked_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    revoked_by_ip = table.Column<string>(type: "text", nullable: true),
+                    revoked_reason = table.Column<string>(type: "text", nullable: true),
+                    replaced_by_token_id = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_refresh_tokens", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_refresh_tokens_refresh_tokens_replaced_by_token_id",
+                        column: x => x.replaced_by_token_id,
+                        principalTable: "refresh_tokens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_refresh_tokens_user_sessions_user_session_id",
+                        column: x => x.user_session_id,
+                        principalTable: "user_sessions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "character_encounters",
                 columns: table => new
                 {
@@ -297,9 +356,31 @@ namespace WowLogAnalyzer.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_refresh_tokens_replaced_by_token_id",
+                table: "refresh_tokens",
+                column: "replaced_by_token_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_refresh_tokens_token_hash_user_session_id",
+                table: "refresh_tokens",
+                columns: new[] { "token_hash", "user_session_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_refresh_tokens_user_session_id",
+                table: "refresh_tokens",
+                column: "user_session_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_spec_unique_spells_spec_id",
                 table: "spec_unique_spells",
                 column: "spec_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_user_sessions_user_id",
+                table: "user_sessions",
+                column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_users_email",
@@ -1148,10 +1229,16 @@ namespace WowLogAnalyzer.Migrations
                 name: "character_encounters");
 
             migrationBuilder.DropTable(
+                name: "refresh_tokens");
+
+            migrationBuilder.DropTable(
                 name: "spec_unique_spells");
 
             migrationBuilder.DropTable(
                 name: "spells");
+
+            migrationBuilder.DropTable(
+                name: "user_sessions");
 
             migrationBuilder.DropTable(
                 name: "specs");

@@ -3,10 +3,6 @@ namespace WowLogAnalyzer.Entities;
 
 public class User 
 {
-    public User()
-    {
-
-    }
 
     [Key]
     public int Id { get; set; }
@@ -17,7 +13,7 @@ public class User
     public string Password { get; set; } = string.Empty;
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
     public ICollection<Log> Logs { get; set; } = [];
-
+    public List<UserSession> Sessions { get; set; } = new();
     public static string HashPassword(string password)
     {
         return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);

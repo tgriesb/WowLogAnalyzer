@@ -12,7 +12,7 @@ using WowLogAnalyzer.Data;
 namespace WowLogAnalyzer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251203145126_Initial")]
+    [Migration("20251208003755_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -305,6 +305,70 @@ namespace WowLogAnalyzer.Migrations
                     b.ToTable("logs", (string)null);
                 });
 
+            modelBuilder.Entity("WowLogAnalyzer.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByIp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_ip");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int?>("ReplacedByTokenId")
+                        .HasColumnType("integer")
+                        .HasColumnName("replaced_by_token_id");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasColumnType("text")
+                        .HasColumnName("revoked_by_ip");
+
+                    b.Property<string>("RevokedReason")
+                        .HasColumnType("text")
+                        .HasColumnName("revoked_reason");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("token_hash");
+
+                    b.Property<int>("UserSessionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_session_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_refresh_tokens");
+
+                    b.HasIndex("ReplacedByTokenId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_tokens_replaced_by_token_id");
+
+                    b.HasIndex("UserSessionId")
+                        .HasDatabaseName("ix_refresh_tokens_user_session_id");
+
+                    b.HasIndex("TokenHash", "UserSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_tokens_token_hash_user_session_id");
+
+                    b.ToTable("refresh_tokens", (string)null);
+                });
+
             modelBuilder.Entity("WowLogAnalyzer.Entities.Spec", b =>
                 {
                     b.Property<int>("Id")
@@ -414,6 +478,58 @@ namespace WowLogAnalyzer.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("WowLogAnalyzer.Entities.UserSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("device_name");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text")
+                        .HasColumnName("ip_address");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("RevokedReason")
+                        .HasColumnType("text")
+                        .HasColumnName("revoked_reason");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("user_agent");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_sessions");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_sessions_user_id");
+
+                    b.ToTable("user_sessions", (string)null);
+                });
+
             modelBuilder.Entity("WowLogAnalyzer.Entities.CharacterEncounter", b =>
                 {
                     b.HasOne("WowLogAnalyzer.Entities.Character", "Character")
@@ -518,6 +634,26 @@ namespace WowLogAnalyzer.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WowLogAnalyzer.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("WowLogAnalyzer.Entities.RefreshToken", "ReplacedByToken")
+                        .WithOne()
+                        .HasForeignKey("WowLogAnalyzer.Entities.RefreshToken", "ReplacedByTokenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_refresh_tokens_refresh_tokens_replaced_by_token_id");
+
+                    b.HasOne("WowLogAnalyzer.Entities.UserSession", "UserSession")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_refresh_tokens_user_sessions_user_session_id");
+
+                    b.Navigation("ReplacedByToken");
+
+                    b.Navigation("UserSession");
+                });
+
             modelBuilder.Entity("WowLogAnalyzer.Entities.SpecUniqueSpell", b =>
                 {
                     b.HasOne("WowLogAnalyzer.Entities.Spec", "Spec")
@@ -526,6 +662,18 @@ namespace WowLogAnalyzer.Migrations
                         .HasConstraintName("fk_spec_unique_spells_specs_spec_id");
 
                     b.Navigation("Spec");
+                });
+
+            modelBuilder.Entity("WowLogAnalyzer.Entities.UserSession", b =>
+                {
+                    b.HasOne("WowLogAnalyzer.Entities.User", "User")
+                        .WithMany("Sessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_sessions_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WowLogAnalyzer.Entities.Encounter", b =>
@@ -546,6 +694,13 @@ namespace WowLogAnalyzer.Migrations
             modelBuilder.Entity("WowLogAnalyzer.Entities.User", b =>
                 {
                     b.Navigation("Logs");
+
+                    b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("WowLogAnalyzer.Entities.UserSession", b =>
+                {
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

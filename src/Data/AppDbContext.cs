@@ -23,10 +23,31 @@ namespace WowLogAnalyzer.Data
         public DbSet<SpecUniqueSpell> SpecUniqueSpells { get; set; } = null!;
         public DbSet<CharacterEncounter> CharacterEncounters { get; set; } = null!;
         public DbSet<Spec> Specs { get; set; } = null!;
-
+        public DbSet<UserSession> UserSessions { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<UserSession>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.Sessions)
+                .HasForeignKey(s => s.UserId);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.UserSession)
+                .WithMany(s => s.RefreshTokens)
+                .HasForeignKey(rt => rt.UserSessionId);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.ReplacedByToken)
+                .WithOne()
+                .HasForeignKey<RefreshToken>(rt => rt.ReplacedByTokenId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasIndex(rt => new { rt.TokenHash, rt.UserSessionId })
+                .IsUnique();
+
             modelBuilder.Entity<User>()
                 .HasIndex(e => e.Email)
                 .IsUnique();
