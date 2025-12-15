@@ -8,15 +8,37 @@ using System.IdentityModel.Tokens.Jwt;
 
 namespace WowLogAnalyzer.Controllers;
 
+/// <summary>
+/// Handles user authentication and token management.
+/// Implements a secure flow using short-lived JWT access tokens and long-lived HttpOnly refresh cookies.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class SecurityController(IAuthService auth, AppDbContext dbContext) : ControllerBase
 {
 
     private readonly IAuthService _auth = auth ?? throw new ArgumentNullException(nameof(auth));
     private readonly AppDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
-   [HttpPost("login")]
+    /// <summary>
+    /// Authenticates a user and establishes a new session.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// On success, this endpoint returns a short-lived <strong>Access Token</strong> in the response body
+    /// for use in Authorization headers.
+    /// </para>
+    /// <para>
+    /// It also sets a secure, HttpOnly <strong>Refresh Token</strong> cookie. This cookie is used automatically
+    /// by the <c>/refresh</c> endpoint to get new access tokens when the current one expires.
+    /// </para>
+    /// </remarks>
+    /// <param name="loginDto">The user's email and password.</param>
+    /// <returns>The access token and user profile information.</returns>
+    /// <response code="200">Login successful.</response>
+    /// <response code="401">Invalid email or password.</response>
+    [HttpPost("login")]
     public async Task<ActionResult<LoginDto>> Login([FromBody] LoginDto dto)
     {
         var result = await _auth.LoginAsync(
@@ -28,6 +50,21 @@ public class SecurityController(IAuthService auth, AppDbContext dbContext) : Con
         return Ok(result); // result is LoginDto
     }
 
+    /// <summary>
+    /// Refreshes an expired Access Token using the secure Refresh Token cookie.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This endpoint is typically called by the frontend's API interceptor when a 401 Unauthorized response is received.
+    /// </para>
+    /// <para>
+    /// It performs <strong>Token Rotation</strong>: The old refresh token is invalidated, and a new one is issued
+    /// in the Set-Cookie header.
+    /// </para>
+    /// </remarks>
+    /// <returns>A new Access Token.</returns>
+    /// <response code="200">Token refreshed successfully.</response>
+    /// <response code="401">If the refresh token cookie is missing, expired, or invalid.</response>
     [HttpPost("refresh")]
     public async Task<ActionResult<LoginDto>> Refresh()
     {
@@ -35,6 +72,16 @@ public class SecurityController(IAuthService auth, AppDbContext dbContext) : Con
         return Ok(result);
     }
 
+
+    /// <summary>
+    /// Logs the user out by invalidating the session.
+    /// </summary>
+    /// <remarks>
+    /// This instructs the browser to delete the Refresh Token cookie.
+    /// The frontend should also clear the Access Token from memory.
+    /// </remarks>
+    /// <returns>Success message.</returns>
+    /// <response code="200">Logged out successfully.</response>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
@@ -46,6 +93,10 @@ public class SecurityController(IAuthService auth, AppDbContext dbContext) : Con
     // TODO: Logout ALL SESSIONS?
     // -----------------------------
 
+
+    /// <summary>
+    /// Helper method to set the Refresh Token in an HttpOnly cookie.
+    /// </summary>
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<LoginDto?>> Me()

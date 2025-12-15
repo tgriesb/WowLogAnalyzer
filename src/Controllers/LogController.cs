@@ -9,9 +9,13 @@ using WowLogAnalyzer.Services;
 
 namespace WowLogAnalyzer.Controllers;
 
+/// <summary>
+/// Manages the upload and retrieval of World of Warcraft combat logs.
+/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class LogController(
     AppDbContext dbContext,
     IUserRepository userRepository,
@@ -27,7 +31,21 @@ public class LogController(
     private readonly ICombatLogService _combatLogService = combatLogService ?? throw new ArgumentNullException(nameof(combatLogService));
     private readonly ICombatAnalyticsService _combatAnalyticsService = combatAnalyticsService ?? throw new ArgumentNullException(nameof(combatAnalyticsService));
 
+
+    /// <summary>
+    /// Retrieves all combat logs uploaded by the authenticated user with optional pagination.
+    /// </summary>
+    /// <remarks>
+    /// Results are sorted by log ID in ascending order.
+    /// </remarks>
+    /// <param name="page">The page number (1-based). Set to 0 to retrieve all logs without pagination.</param>
+    /// <param name="pageSize">The number of results per page. Ignored if page is 0.</param>
+    /// <returns>A collection of log summaries.</returns>
+    /// <response code="200">Returns the list of logs for the current user.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpGet()]
+    [ProducesResponseType(typeof(IEnumerable<Log>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logs([FromQuery] int page = 0, [FromQuery] int pageSize = 0)
     {
         var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -52,9 +70,44 @@ public class LogController(
     }
 
 
+    /// <summary>
+    /// Uploads and parses a World of Warcraft combat log file.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Accepts a <c>.txt</c> file via multipart/form-data. The file is processed line-by-line to:
+    /// <list type="bullet">
+    /// <item><description>Detect and extract boss encounters (ENCOUNTER_START/END events)</description></item>
+    /// <item><description>Parse combat events (damage, healing, auras, casts)</description></item>
+    /// <item><description>Identify and create character profiles from player GUIDs</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>File Requirements:</strong>
+    /// <list type="bullet">
+    /// <item><description>Must be a <c>.txt</c> file (WoW's default combat log format)</description></item>
+    /// <item><description>Cannot be empty</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// <strong>Size Limit:</strong> Maximum 1 GB per file.
+    /// </para>
+    /// <para>
+    /// <strong>Performance Note:</strong> Large log files may take 10-30 seconds to process.
+    /// </para>
+    /// </remarks>
+    /// <param name="file">The combat log text file to upload.</param>
+    /// <param name="logName">Optional custom name for the log. If not provided, defaults to empty string.</param>
+    /// <returns>The ID of the created log.</returns>
+    /// <response code="200">Log successfully uploaded and parsed.</response>
+    /// <response code="400">If the file is missing or empty.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpPost("upload")]
     [RequestSizeLimit(1_000_000_000)]
     [RequestFormLimits(ValueLengthLimit = 1_000_000_000, MultipartBodyLengthLimit = 1_000_000_000)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Upload(IFormFile file, [FromForm] string? logName)
     {
         if (file == null || file.Length == 0)
@@ -89,7 +142,19 @@ public class LogController(
     }
     
     
+    /// <summary>
+    /// Retrieves all encounters from a specific combat log.
+    /// </summary>
+    /// <remarks>
+    /// Returns a summary of all boss encounters detected in the log along with the log metadata.
+    /// </remarks>
+    /// <param name="logId">The unique identifier of the log.</param>
+    /// <returns>A collection of encounters and the log details.</returns>
+    /// <response code="200">Returns the list of encounters.</response>
+    /// <response code="404">If the log is not found.</response>
     [HttpGet("encounters/{logId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEncounters(int logId)
     {
         var log = await _dbContext.Logs.FindAsync(logId);
@@ -106,7 +171,19 @@ public class LogController(
         });
     }
 
+    /// <summary>
+    /// Retrieves detailed statistics for a specific encounter.
+    /// </summary>
+    /// <remarks>
+    /// Returns character-level performance data (damage, healing, deaths, etc.) for all participants in the encounter.
+    /// </remarks>
+    /// <param name="encounterId">The unique identifier of the encounter.</param>
+    /// <returns>Character performance details and encounter metadata.</returns>
+    /// <response code="200">Returns the encounter details with character statistics.</response>
+    /// <response code="404">If the encounter is not found.</response>
     [HttpGet("encounter/{encounterId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEncounter(int encounterId)
     {
         var encounter = await _dbContext.Encounters.FindAsync(encounterId);
@@ -124,8 +201,22 @@ public class LogController(
         });
     }
 
-
+    /// <summary>
+    /// Retrieves encounter statistics aggregated at fixed time intervals.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This endpoint breaks down the encounter into 5-second intervals and calculates aggregate statistics
+    /// (DPS, HPS, deaths, etc.) for each interval. Useful for visualizing performance trends over time.
+    /// </para>
+    /// </remarks>
+    /// <param name="encounterId">The unique identifier of the encounter.</param>
+    /// <returns>Time-series statistics for the encounter, grouped by 5-second intervals.</returns>
+    /// <response code="200">Returns interval-based statistics.</response>
+    /// <response code="404">If the encounter is not found.</response>
     [HttpGet("encounter-statistics-by-interval/{encounterId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEncounterStatisticsByInterval(int encounterId)
     {
         var encounter = await _dbContext.Encounters.FindAsync(encounterId);

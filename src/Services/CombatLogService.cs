@@ -15,17 +15,33 @@ using WowLogAnalyzer.Registry;
 using WowLogAnalyzer.Parsers;
 
 namespace WowLogAnalyzer.Services;
+
+/// <summary>
+/// Service responsible for parsing and processing World of Warcraft combat log files.
+/// Handles the extraction of combat events, encounters, and character data from raw log text.
+/// </summary>
 public class CombatLogService(AppDbContext dbContext, IUserRepository userRepository) : ICombatLogService
 {
     private readonly AppDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
     private readonly IUserRepository _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
+    /// <summary>
+    /// Parses an uploaded combat log file and saves the data to the database.
+    /// </summary>
+    /// <param name="file">The uploaded text file containing the combat log.</param>
+    /// <param name="log">The log entity associated with this upload.</param>
     public async Task ParseLogFileAsync(IFormFile file, Log log)
     {
         using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
         await ParseLogLinesAsync(reader, log);
     }
 
+    /// <summary>
+    /// Reads the log file line by line, parses events, and bulk inserts them into the database.
+    /// Also triggers post-processing to identify encounters and characters.
+    /// </summary>
+    /// <param name="reader">The text reader for the log file.</param>
+    /// <param name="log">The log entity.</param>
     public async Task ParseLogLinesAsync(TextReader reader, Log log)
     {
         // Using EF took 22+ minutes, switching to COPY
@@ -284,6 +300,11 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         await setCharacterToId.ExecuteNonQueryAsync();
     }
 
+    /// <summary>
+    /// Parses a single line of the combat log into a CombatEvent object.
+    /// </summary>
+    /// <param name="line">The raw line of text from the log file.</param>
+    /// <returns>A parsed CombatEvent containing the timestamp, event type, and payload.</returns>
     public static CombatEvent ParseLine(string line)
     {
         // Parse timestamp index, just find the 2 spaces
@@ -328,6 +349,12 @@ public class CombatLogService(AppDbContext dbContext, IUserRepository userReposi
         return evt;
     }
 
+    /// <summary>
+    /// Parses the event-specific payload data based on the event type.
+    /// </summary>
+    /// <param name="type">The type of the combat sub-event.</param>
+    /// <param name="f">The array of fields extracted from the log line.</param>
+    /// <returns>An ICombatEvent object representing the specific event data.</returns>
     public static ICombatEvent ParsePayload(CombatSubEventType type, string[] f)
     {
         var payloadType = PayloadTypeRegistry.GetPayloadType(type)

@@ -11,6 +11,23 @@ RESTful API for analyzing World of Warcraft combat logs. Upload and parse WoW co
 - **User Authentication**: JWT-based authentication with secure user management
 - **RESTful API**: Clean API endpoints for log upload, retrieval, and analysis
 
+## API Documentation
+
+The backend provides a comprehensive REST API documented via Swagger UI.
+
+### Key Endpoints
+
+- **POST /api/log/upload**: Upload a combat log file (.txt).
+- **GET /api/log**: Retrieve uploaded logs for the current user.
+- **GET /api/log/encounters/{logId}**: Get all encounters detected in a log.
+- **GET /api/log/encounter/{encounterId}**: Get detailed statistics for a specific encounter.
+- **GET /api/log/encounter-statistics-by-interval/{encounterId}**: Get time-series data for graphs.
+
+### Authentication
+
+All API endpoints (except login/register) require a valid JWT token in the `Authorization` header:
+`Authorization: Bearer <your-token>`
+
 
 ## Getting Started
 
