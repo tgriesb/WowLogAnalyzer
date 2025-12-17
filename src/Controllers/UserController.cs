@@ -42,7 +42,7 @@ public class UserController(AppDbContext dbContext, IUserRepository userReposito
     public async Task<ActionResult<IEnumerable<User>>> Index()
     {
         var users = await _userRepository.GetUsersAsync();
-    
+
         // Return an OkObjectResult with the list of users.
         return Ok(users.ToResponseList());
     }
@@ -131,5 +131,28 @@ public class UserController(AppDbContext dbContext, IUserRepository userReposito
 
         // Return 201 with location header to GET the created user
         return CreatedAtAction(nameof(Get), new { id = user.Id }, user.ToResponse());
+    }
+
+    /// <summary>
+    /// Deletes a specific user account.
+    /// </summary>
+    /// <param name="id">The unique identifier of the user to delete.</param>
+    /// <returns>No content if successful.</returns>
+    /// <response code="204">If the user was successfully deleted.</response>
+    /// <response code="404">If the user is not found.</response>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var user = await _userRepository.GetUserByIdAsync(id);
+
+        if (user == null)
+            return NotFound();
+
+        _dbContext.Users.Remove(user);
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
     }
 }

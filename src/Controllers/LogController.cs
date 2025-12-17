@@ -140,8 +140,8 @@ public class LogController(
             LogId = log.Id
         });
     }
-    
-    
+
+
     /// <summary>
     /// Retrieves all encounters from a specific combat log.
     /// </summary>
@@ -163,7 +163,7 @@ public class LogController(
             return NotFound();
         }
         var encounters = await _combatAnalyticsService.GetEncountersAsync(logId);
-        
+
         return Ok(new
         {
             Encounters = encounters,
@@ -193,7 +193,7 @@ public class LogController(
         }
 
         var characters = await _combatAnalyticsService.GetEncounterDetails(encounterId);
-    
+
         return Ok(new
         {
             Characters = characters,
@@ -227,5 +227,28 @@ public class LogController(
 
         var statistics = await _combatAnalyticsService.GetEncounterStatsPerInterval(encounterId, 5);
         return Ok(statistics);
-    }   
+    }
+
+    /// <summary>
+    /// Deletes a log by its ID.
+    /// </summary>
+    /// <param name="id">The ID of the log to delete.</param>
+    /// <returns>No content if successful, or not found if the log does not exist.</returns>
+    /// <response code="204">Log deleted successfully.</response>
+    /// <response code="404">Log not found.</response>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var log = await _dbContext.Logs.FindAsync(id);
+
+        if (log == null)
+            return NotFound();
+
+        _dbContext.Logs.Remove(log);
+        await _dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

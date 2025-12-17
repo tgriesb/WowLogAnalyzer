@@ -67,6 +67,18 @@ namespace WowLogAnalyzer.Data
                     .HasColumnType("jsonb")
                     .HasConversion(converter);
             });
+
+            modelBuilder.Entity<Log>()
+                .HasMany(l => l.CombatEvents)
+                .WithOne(e => e.Log)
+                .HasForeignKey(e => e.LogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Encounter>()
+                    .HasOne(e => e.Log)
+                    .WithMany()
+                    .HasForeignKey(e => e.LogId)
+                    .OnDelete(DeleteBehavior.Cascade);
         }
 
     }
