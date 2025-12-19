@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using WowLogAnalyzer.Data;
 using WowLogAnalyzer.Entities;
 using WowLogAnalyzer.Repository;
@@ -202,6 +203,37 @@ public class LogController(
     }
 
     /// <summary>
+    /// Retrieves detailed statistics for a specific encounter.
+    /// </summary>
+    /// <remarks>
+    /// Returns character-level performance data (damage, healing, deaths, etc.) for all participants for all encounters, trash optional.
+    /// </remarks>
+    /// <param name="logId">The unique identifier of the log.</param>
+    /// <param name="includeTrash">Whether to include trash encounters.</param>
+    /// <returns>Character performance details and encounter metadata.</returns>
+    /// <response code="200">Returns the log details with character statistics.</response>
+    /// <response code="404">If the log is not found.</response>
+    [HttpGet("log-details/{logId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLogDetails(int logId, bool includeTrash = false)
+    {
+        var log = await _dbContext.Logs.FindAsync(logId);
+        if (log == null)
+        {
+            return NotFound();
+        }
+
+        var characters = await _combatAnalyticsService.GetLogDetails(logId, includeTrash);
+
+        return Ok(new
+        {
+            Characters = characters,
+            Log = log,
+        });
+    }
+
+    /// <summary>
     /// Retrieves encounter statistics aggregated at fixed time intervals.
     /// </summary>
     /// <remarks>
@@ -226,6 +258,35 @@ public class LogController(
         }
 
         var statistics = await _combatAnalyticsService.GetEncounterStatsPerInterval(encounterId, 5);
+        return Ok(statistics);
+    }
+
+    /// <summary>
+    /// Retrieves log encounter statistics aggregated at fixed time intervals.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This endpoint breaks down the encounter into 5-second intervals and calculates aggregate statistics
+    /// (DPS, HPS, deaths, etc.) for each interval. Useful for visualizing performance trends over time.
+    /// </para>
+    /// </remarks>
+    /// <param name="logId">The unique identifier of the log.</param>
+    /// <param name="includeTrash">Whether to include trash encounters in the statistics.</param>
+    /// <returns>Time-series statistics for the encounter, grouped by 5-second intervals.</returns>
+    /// <response code="200">Returns interval-based statistics.</response>
+    /// <response code="404">If the encounter is not found.</response>
+    [HttpGet("log-encounter-statistics-by-interval/{logId}")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLogEncounterStatisticsByInterval(int logId, bool includeTrash = false)
+    {
+        var log = await _dbContext.Logs.FindAsync(logId);
+        if (log == null)
+        {
+            return NotFound();
+        }
+
+        var statistics = await _combatAnalyticsService.GetEncounterStatsPerIntervalByLogId(logId, 5, includeTrash);
         return Ok(statistics);
     }
 
